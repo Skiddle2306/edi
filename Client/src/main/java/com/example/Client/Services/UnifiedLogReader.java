@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -35,11 +36,12 @@ public class UnifiedLogReader {
                 if (!m.find()) continue;
 
                 ZonedDateTime ts = ZonedDateTime.parse(m.group(2), formatter);
-
+                LocalDateTime start = ts.toLocalDateTime();
+            LocalDateTime end =ts.toLocalDateTime();
                 if (lastProcessed != null && ts.isBefore(lastProcessed)) continue;
 
                 results.add(new LogEntry(m.group(1), m.group(8), m.group(4),
-                        Timestamp.from(ts.toInstant())));
+                        start,end,0));
             }
         }
 
