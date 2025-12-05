@@ -10,6 +10,7 @@ const ClientDetail = ({ clientName, onBack }) => {
   const [usersLoading, setUsersLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeTab, setActiveTab] = useState('resources'); // 'resources' or 'users'
+  const [groupByIP, setGroupByIP] = useState(false);
 
   useEffect(() => {
     loadClientData();
@@ -149,6 +150,29 @@ const ClientDetail = ({ clientName, onBack }) => {
 
   // Calculate active sessions
   const activeSessions = usersData.filter(user => !user.end_time).length;
+
+  // Group users by IP address
+  const groupedByIP = usersData.reduce((acc, user) => {
+    const ip = user.ip || 'Unknown';
+    if (!acc[ip]) {
+      acc[ip] = {
+        ip: ip,
+        count: 0,
+        sessions: [],
+        browsers: new Set(),
+        os: new Set(),
+        paths: new Set()
+      };
+    }
+    acc[ip].count++;
+    acc[ip].sessions.push(user);
+    acc[ip].browsers.add(getBrowserFromUserAgent(user.user_agent));
+    acc[ip].os.add(getOSFromUserAgent(user.user_agent));
+    if (user.path) acc[ip].paths.add(user.path);
+    return acc;
+  }, {});
+
+  const groupedIPArray = Object.values(groupedByIP).sort((a, b) => b.count - a.count);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -349,20 +373,24 @@ const ClientDetail = ({ clientName, onBack }) => {
 
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-gray-500 uppercase tracking-wide font-medium">ACTIVE SESSIONS</p>
-                  <span className="text-2xl">🟢</span>
+                  <p className="text-sm text-gray-500 uppercase tracking-wide font-medium">UNIQUE IPs</p>
+                  <span className="text-2xl">🌐</span>
                 </div>
-                <p className="text-3xl font-bold text-green-600">{activeSessions}</p>
-                <p className="text-sm text-gray-600 mt-1">Currently active</p>
+                <p className="text-3xl font-bold text-green-600">{groupedIPArray.length}</p>
+                <p className="text-sm text-gray-600 mt-1">Different addresses</p>
               </div>
 
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-gray-500 uppercase tracking-wide font-medium">COMPLETED</p>
-                  <span className="text-2xl">✅</span>
+                  <p className="text-sm text-gray-500 uppercase tracking-wide font-medium">MOST ACTIVE IP</p>
+                  <span className="text-2xl">🔥</span>
                 </div>
-                <p className="text-3xl font-bold text-purple-600">{usersData.length - activeSessions}</p>
-                <p className="text-sm text-gray-600 mt-1">Ended sessions</p>
+                <p className="text-xl font-bold text-purple-600">
+                  {groupedIPArray[0]?.ip || 'N/A'}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {groupedIPArray[0]?.count || 0} session{groupedIPArray[0]?.count !== 1 ? 's' : ''}
+                </p>
               </div>
             </div>
 
@@ -380,78 +408,118 @@ const ClientDetail = ({ clientName, onBack }) => {
                 </div>
               ) : (
                 <>
-                  <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-xl font-bold text-gray-800">User Sessions</h3>
-                    <p className="text-gray-600 text-sm mt-1">
-                      Tracking {usersData.length} session{usersData.length !== 1 ? 's' : ''} with {activeSessions} active
-                    </p>
+                  <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800">User Sessions</h3>
+                      <p className="text-gray-600 text-sm mt-1">
+                        Tracking {usersData.length} session{usersData.length !== 1 ? 's' : ''} {groupByIP ? `from ${groupedIPArray.length} unique IP${groupedIPArray.length !== 1 ? 's' : ''}` : `with ${activeSessions} active`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setGroupByIP(!groupByIP)}
+                      className={`px-4 py-2 rounded-lg font-medium transition ${
+                        groupByIP
+                          ? 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {groupByIP ? '📊 Grouped by IP' : '📋 Group by IP'}
+                    </button>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200 bg-gray-50">
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Status</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">IP Address</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Browser</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">OS</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Path</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Start Time</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">End Time</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Duration</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {usersData.map((user) => {
-                          const isActive = !user.end_time;
-                          const browser = getBrowserFromUserAgent(user.user_agent);
-                          const os = getOSFromUserAgent(user.user_agent);
-                          
-                          return (
-                            <tr 
-                              key={user.id}
-                              className="border-b border-gray-100 hover:bg-gray-50 transition"
-                            >
-                              <td className="py-4 px-4">
-                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
-                                  isActive 
-                                    ? 'bg-green-100 text-green-700' 
-                                    : 'bg-gray-100 text-gray-700'
-                                }`}>
-                                  <span className={`w-2 h-2 rounded-full ${
-                                    isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
-                                  }`}></span>
-                                  {isActive ? 'Active' : 'Ended'}
-                                </span>
-                              </td>
-                              <td className="py-4 px-4 font-medium text-gray-800">
-                                {user.ip || 'N/A'}
-                              </td>
-                              <td className="py-4 px-4 text-gray-700">
-                                {browser}
-                              </td>
-                              <td className="py-4 px-4 text-gray-700">
-                                {os}
-                              </td>
-                              <td className="py-4 px-4 text-blue-600 font-mono text-sm">
-                                {user.path || '/'}
-                              </td>
-                              <td className="py-4 px-4 text-gray-700 text-sm">
-                                {formatDateTime(user.start_time)}
-                              </td>
-                              <td className="py-4 px-4 text-gray-700 text-sm">
-                                {user.end_time ? formatDateTime(user.end_time) : (
-                                  <span className="text-green-600 font-medium">Active</span>
-                                )}
-                              </td>
-                              <td className="py-4 px-4 text-gray-700 font-medium">
-                                {formatDuration(user.duration_seconds)}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+
+                  {!groupByIP ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-gray-200 bg-gray-50">
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">IP Address</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Browser</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">OS</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Path</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Start Time</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {usersData.map((user) => {
+                            const browser = getBrowserFromUserAgent(user.user_agent);
+                            const os = getOSFromUserAgent(user.user_agent);
+                            
+                            return (
+                              <tr 
+                                key={user.id}
+                                className="border-b border-gray-100 hover:bg-gray-50 transition"
+                              >
+                                <td className="py-4 px-4 font-medium text-gray-800">
+                                  {user.ip || 'N/A'}
+                                </td>
+                                <td className="py-4 px-4 text-gray-700">
+                                  {browser}
+                                </td>
+                                <td className="py-4 px-4 text-gray-700">
+                                  {os}
+                                </td>
+                                <td className="py-4 px-4 text-blue-600 font-mono text-sm">
+                                  {user.path || '/'}
+                                </td>
+                                <td className="py-4 px-4 text-gray-700 text-sm">
+                                  {formatDateTime(user.start_time)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-gray-200 bg-gray-50">
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">IP Address</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Session Count</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Browsers Used</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Operating Systems</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Paths Accessed</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Latest Activity</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {groupedIPArray.map((ipGroup, index) => {
+                            const latestSession = ipGroup.sessions[0];
+                            
+                            return (
+                              <tr 
+                                key={ipGroup.ip}
+                                className="border-b border-gray-100 hover:bg-gray-50 transition"
+                              >
+                                <td className="py-4 px-4 font-medium text-gray-800">
+                                  {ipGroup.ip}
+                                </td>
+                                <td className="py-4 px-4">
+                                  <span className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                                    {ipGroup.count} session{ipGroup.count !== 1 ? 's' : ''}
+                                  </span>
+                                </td>
+                                <td className="py-4 px-4 text-gray-700">
+                                  {Array.from(ipGroup.browsers).join(', ')}
+                                </td>
+                                <td className="py-4 px-4 text-gray-700">
+                                  {Array.from(ipGroup.os).join(', ')}
+                                </td>
+                                <td className="py-4 px-4 text-gray-700 font-mono text-sm">
+                                  {Array.from(ipGroup.paths).slice(0, 3).join(', ')}
+                                  {ipGroup.paths.size > 3 && ` +${ipGroup.paths.size - 3} more`}
+                                </td>
+                                <td className="py-4 px-4 text-gray-700 text-sm">
+                                  {formatDateTime(latestSession.start_time)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </>
               )}
             </div>
