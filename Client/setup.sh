@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-MAIN_SERVER="http://localhost:5050"   # replace MAIN_SERVER_HOST or pass as env var
+MAIN_SERVER="http://10.249.244.172:5050"   # replace MAIN_SERVER_HOST or pass as env var
 
 read -p "Enter server name (alphanumeric, no spaces): " SERVER_NAME
 read -p "Enter full path to your log file (e.g. /var/log/nginx/access.log): " LOG_FILE
@@ -30,13 +30,14 @@ echo "Registration OK."
 # write client config
 cat > client-config.properties <<EOF
 client.name=$SERVER_NAME
-client.logfile=$LOG_FILE
+client.log=$LOG_FILE
+server.url=http://10.249.244.172:5050
 EOF
 
 # overwrite application.properties datasource settings for client
 cat > src/main/resources/application.properties <<EOF
 server.port=2020
-spring.datasource.url=jdbc:postgresql://MAIN_SERVER_HOST:5432/servermanager
+spring.datasource.url=jdbc:postgresql://10.249.244.172:5432/servermanager
 spring.datasource.username=$SERVER_NAME
 spring.datasource.password=$PASSWORD
 spring.datasource.driver-class-name=org.postgresql.Driver

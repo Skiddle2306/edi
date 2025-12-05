@@ -12,7 +12,7 @@ import java.util.Properties;
 @Service
 public class LogIntervalUpdateService {
     private final RestClient restClient = RestClient.create();
-    private final String serverUrl = "http://localhost:5050/api/logs/push";
+    private final String serverUrl ;
 
     private final UnifiedLogReader reader;
     private final WriterService writer;
@@ -29,6 +29,7 @@ public class LogIntervalUpdateService {
 
         this.logFilePath = clientProperties.getProperty("client.log");
         this.clientName = clientProperties.getProperty("client.name");
+        this.serverUrl = clientProperties.getProperty("server.url")+"/api/logs/push";
         if (this.logFilePath == null) {
             throw new IllegalStateException("client.log not found in client.properties");
         }
@@ -77,6 +78,7 @@ public void updateLogs() {
                     .retrieve()
                     .toBodilessEntity();
         } catch (Exception e) {
+            System.out.println(serverUrl);
             System.out.println("Failed to push logs:");
             throw new RuntimeException(e);
         }

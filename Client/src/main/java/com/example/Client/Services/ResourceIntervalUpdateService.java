@@ -12,7 +12,7 @@ public class ResourceIntervalUpdateService {
 
     private final RestClient restClient = RestClient.create();
     private final UnifiedResourceReader resourceReader;
-    private final String serverUrl = "http://localhost:5050/api/resources/push";
+    private final String serverUrl ;
     private final String clientName;
 
     public ResourceIntervalUpdateService(
@@ -21,6 +21,7 @@ public class ResourceIntervalUpdateService {
     ) {
         this.resourceReader = resourceReader;
         this.clientName = props.getProperty("client.name");
+        this.serverUrl = props.getProperty("server.url")+"/api/resources/push";
     }
 
     @Scheduled(fixedRate = 5000)
