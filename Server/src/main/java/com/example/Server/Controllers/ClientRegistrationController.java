@@ -26,6 +26,7 @@ public class ClientRegistrationController {
         }
 
         try {
+            System.out.println("Trying to register");
             roleManagerService.registerNewClient(clientName, password);
             return ResponseEntity.ok("Registered");
         } catch (Exception e) {

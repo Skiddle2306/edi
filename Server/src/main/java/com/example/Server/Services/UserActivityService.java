@@ -4,6 +4,7 @@ import com.example.Server.Models.UserActivity;
 import com.example.Server.Repositories.UserActivityRepository;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -30,18 +31,18 @@ public class UserActivityService {
             String ip,
             String userAgent,
             String path,
-            LocalDateTime start,
-            LocalDateTime end,
-            int durationSeconds
+            Timestamp ts
     ) {
         UserActivity ua = new UserActivity();
         ua.setClientName(clientName);
         ua.setIp(ip);
         ua.setUserAgent(userAgent);
         ua.setPath(path);
+        LocalDateTime start = ts.toLocalDateTime();
+        LocalDateTime end =ts.toLocalDateTime();
         ua.setStartTime(start);
         ua.setEndTime(end);
-        ua.setDurationSeconds(durationSeconds);
+        ua.setDurationSeconds(0);
 
         repo.save(ua);
     }
