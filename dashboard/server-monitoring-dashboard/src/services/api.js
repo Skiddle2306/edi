@@ -14,14 +14,27 @@ export const fetchDashboardData = async () => {
   }
 };
 
+// Fetch user/session data for a specific client
+export const fetchClientUsers = async (clientName) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/client-users/${clientName}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch client users');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching client users:', error);
+    throw error;
+  }
+};
+
 // Calculate aggregate statistics from all clients
 export const calculateAggregateStats = (data) => {
   const clients = Object.keys(data);
-  
   let totalClients = clients.length;
   let onlineClients = 0;
   let totalCpuUsage = 0;
-  
+
   clients.forEach(clientName => {
     const clientInfo = data[clientName];
     
@@ -35,7 +48,7 @@ export const calculateAggregateStats = (data) => {
       totalCpuUsage += parseFloat(clientInfo.metrics[0].cpu_usage) || 0;
     }
   });
-  
+
   return {
     totalClients,
     onlineClients,
