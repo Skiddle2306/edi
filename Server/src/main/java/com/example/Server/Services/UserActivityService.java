@@ -12,15 +12,26 @@ import java.util.List;
 public class UserActivityService {
 
     private final UserActivityRepository repo;
-
-    public UserActivityService(UserActivityRepository repo) {
+    private final AlertService alertService;
+    public UserActivityService(UserActivityRepository repo, AlertService alertService) {
         this.repo = repo;
+        this.alertService = alertService;
     }
 
 
     public void saveAll(String clientName, List<UserActivity> list) {
+        System.out.println("hi");
         for (UserActivity ua : list) {
-            ua.setClientName(clientName); // ensure client tagging
+            ua.setClientName(clientName);
+            System.out.println(ua.getUserAgent());
+            System.out.println("Analysis data");// ensure client tagging
+            alertService.analyze(
+            clientName,
+            ua.getIp(),
+            ua.getUserAgent(),
+            ua.getPath()
+        );
+            System.out.println("Analysed data");
         }
         repo.saveAll(list);
     }
@@ -45,6 +56,7 @@ public class UserActivityService {
         ua.setDurationSeconds(0);
 
         repo.save(ua);
+        alertService.analyze(clientName, ip, userAgent, path);
     }
 
 //    public List<UserActivity> getAllByClient(String clientName) {

@@ -196,6 +196,77 @@ app.get('/api/client-metrics/:clientName', async (req, res) => {
     });
   }
 });
+// Get all alerts across all clients
+app.get('/api/alerts', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM alerts ORDER BY triggered_at DESC LIMIT 1000;'
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching alerts:', err.message);
+    res.status(500).json({ error: 'Failed to fetch alerts' });
+  }
+});
+
+// Get alerts for a specific client
+app.get('/api/alerts/:clientName', async (req, res) => {
+  try {
+    const { clientName } = req.params;
+    const result = await pool.query(
+      'SELECT * FROM alerts WHERE client_name = $1 ORDER BY triggered_at DESC LIMIT 1000;',
+      [clientName]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching alerts:', err.message);
+    res.status(500).json({ error: 'Failed to fetch alerts' });
+  }
+});
+
+// Get alerts filtered by priority
+app.get('/api/alerts/:clientName/priority/:priority', async (req, res) => {
+  try {
+    const { clientName, priority } = req.params;
+    const validPriorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+    
+    if (!validPriorities.includes(priority.toUpperCase())) {
+      return res.status(400).json({ error: 'Invalid priority. Use LOW, MEDIUM, HIGH or CRITICAL' });
+    }
+
+    const result = await pool.query(
+      'SELECT * FROM alerts WHERE client_name = $1 AND priority = $2 ORDER BY triggered_at DESC LIMIT 1000;',
+      [clientName, priority.toUpperCase()]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching alerts by priority:', err.message);
+    res.status(500).json({ error: 'Failed to fetch alerts' });
+  }
+});
+
+// Get alert summary counts per client (useful for dashboard badges)
+app.get('/api/alerts-summary', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        client_name,
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE priority = 'CRITICAL') as critical,
+        COUNT(*) FILTER (WHERE priority = 'HIGH') as high,
+        COUNT(*) FILTER (WHERE priority = 'MEDIUM') as medium,
+        COUNT(*) FILTER (WHERE priority = 'LOW') as low,
+        MAX(triggered_at) as last_alert_at
+      FROM alerts
+      GROUP BY client_name
+      ORDER BY critical DESC, high DESC;
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching alert summary:', err.message);
+    res.status(500).json({ error: 'Failed to fetch alert summary' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`\n✅ Node.js API listening on http://localhost:${PORT}`);

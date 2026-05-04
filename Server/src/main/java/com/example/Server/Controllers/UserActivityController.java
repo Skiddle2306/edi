@@ -24,6 +24,7 @@ public class UserActivityController {
     ) {
         try {
             System.out.println("Logs: " + logs);
+            System.out.println("yay");
             service.saveAll(clientName, logs);
             return ResponseEntity.ok("Logs saved");
         } catch (Exception e) {
