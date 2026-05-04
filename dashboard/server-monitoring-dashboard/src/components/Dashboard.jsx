@@ -2,8 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { fetchDashboardData, calculateAggregateStats } from '../services/api';
 import MetricCard from './MetricCard';
+import { useAlerts } from '../hooks/useAlerts';
 
 const Dashboard = ({ onClientSelect }) => {
+const { alerts, setAlerts } = useAlerts();
+const [showAlerts, setShowAlerts] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,7 +17,7 @@ const Dashboard = ({ onClientSelect }) => {
   useEffect(() => {
     loadDashboardData();
     
-    // Refresh data every 5 seconds
+    // Refresh data every 5 seconds8
     const interval = setInterval(() => {
       loadDashboardData();
     }, 5000);
@@ -121,12 +124,42 @@ const Dashboard = ({ onClientSelect }) => {
                 <p className="text-sm text-gray-600 mt-1">{formatTime(currentTime)}</p>
               </div>
               <div className="relative">
-                <button className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold relative">
-                  🔔
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    0
-                  </span>
-                </button>
+                <button
+  onClick={() => setShowAlerts(!showAlerts)}
+  className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold relative"
+>
+  🔔
+  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+    {alerts.length}
+  </span>
+</button>
+{showAlerts && (
+  <div className="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg p-3 z-50 max-h-96 overflow-y-auto">
+
+    {/* 🔥 HEADER */}
+    <div className="flex justify-between items-center mb-2">
+      <p className="font-semibold text-sm">Alerts</p>
+      <button
+        onClick={() => setAlerts([])}
+        className="text-xs text-red-500 hover:underline"
+      >
+        Clear All
+      </button>
+    </div>
+
+    {/* 🔽 LIST */}
+    {alerts.length === 0 ? (
+      <p className="text-sm text-gray-500">No alerts</p>
+    ) : (
+      alerts.map((alert) => (
+        <div key={alert.id} className="mb-2 border-b pb-2">
+          <div className="text-xs font-semibold">{alert.priority}</div>
+          <div className="text-sm text-gray-600">{alert.message}</div>
+        </div>
+      ))
+    )}
+  </div>
+)}
               </div>
               <button className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
                 S

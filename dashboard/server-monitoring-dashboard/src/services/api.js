@@ -56,3 +56,19 @@ export const calculateAggregateStats = (data) => {
     averageLoad: totalClients > 0 ? (totalCpuUsage / totalClients).toFixed(1) : 0
   };
 };
+
+export const fetchAlerts = async (clientName) => {
+  const baseUrl = 'http://localhost:3001'; // SAME as your backend
+
+  const url = clientName
+    ? `${baseUrl}/api/alerts/${clientName}`
+    : `${baseUrl}/api/alerts`;
+
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch alerts');
+  }
+
+  return res.json();
+};
