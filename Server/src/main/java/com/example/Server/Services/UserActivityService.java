@@ -20,6 +20,18 @@ public class UserActivityService {
 
 
     public void saveAll(String clientName, List<UserActivity> list) {
+        LocalDateTime lastSaved = repo.findLastStartTimeByClient(clientName);
+
+    // get earliest incoming log time
+    LocalDateTime incomingEarliest = list.stream()
+        .map(UserActivity::getStartTime)
+        .min(LocalDateTime::compareTo)
+        .orElse(null);
+
+    if (lastSaved != null && incomingEarliest != null && !incomingEarliest.isAfter(lastSaved)) {
+//        System.out.println("Rejected old logs for client: " + clientName);
+        return;
+    }
         System.out.println("hi");
         for (UserActivity ua : list) {
             ua.setClientName(clientName);
