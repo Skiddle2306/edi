@@ -23,6 +23,7 @@ public class UserActivityController {
             @RequestBody List<UserActivity> logs
     ) {
         try {
+            System.out.println("Logs: " + logs);
             service.saveAll(clientName, logs);
             return ResponseEntity.ok("Logs saved");
         } catch (Exception e) {

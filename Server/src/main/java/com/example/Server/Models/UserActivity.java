@@ -20,8 +20,7 @@ public class UserActivity {
     private LocalDateTime endTime;
     private int durationSeconds;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+
 
     // --- GETTERS & SETTERS ---
 
@@ -85,7 +84,5 @@ public class UserActivity {
         this.durationSeconds = durationSeconds;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+
 }
